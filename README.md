@@ -1,5 +1,14 @@
 # MemorySnitcher
 
+## Update - 12/2025: Rethinking the Approach
+
+**Important note**: This article was written with the assumption that using `NtReadVirtualMemory` was necessary for stealthy Export Address Table (EAT) traversal. However, this approach has been correctly criticized as unnecessary complexity. When reading your own process's memory, direct pointer access (e.g., `*(DWORD*)(address)`) is not only more efficient but also less suspicious than using `NtReadVirtualMemory`. The technique described here demonstrates creative thinking about API resolution, but simpler alternatives exist that avoid both IAT entries and the overhead of NT system calls for self-process memory reading.
+
+<br>
+
+----------------------------------------------------------
+
+
 ## TL;DR
 
 - Using dynamic API resolution to avoid functions appearing in the IAT requires only the *NtReadVirtualMemory* address.
@@ -35,10 +44,10 @@
 
 7. [Conclusion](#conclusion)
 
+
 <br>
 
-
-
+----------------------------------------------------------
 
 ## Motivation
 
@@ -49,6 +58,8 @@ Some of these projects have been [NativeDump](https://github.com/ricardojoserf/N
 It bothered me to have all the necessary functions in the Import Address Table (IAT) of the binary, because this could hint at the true intentions of the compiled binary, so I implemented dynamic API resolution. However, using it, I could not avoid calling *GetModuleHandle* or *LoadLibrary* and *GetProcAddress* - which are part of kernel32.dll, not ntdll.dll!
 
 <br>
+
+----------------------------------------------------------
 
 ## NtReadVirtualMemory for API resolution
 
@@ -131,6 +142,7 @@ The file [resolve.c](https://github.com/ricardojoserf/MemorySnitcher/blob/main/r
 
 <br>
 
+----------------------------------------------------------
 
 ## Approach 1: Print the address
 
@@ -159,6 +171,7 @@ The function address value will change for every system and reboot, so hardcodin
 <br>
 
 
+----------------------------------------------------------
 
 ## Approach 2: More code!
 
@@ -209,7 +222,7 @@ Using AI we can generate a new program every time we want, as huge and useless a
 
 <br>
 
-
+----------------------------------------------------------
 
 
 ## Approach 3: Address leak by design
@@ -288,8 +301,7 @@ The rest of the examples offered similar results. If you compile the programs an
 
 <br>
 
-
-
+----------------------------------------------------------
 
 ### Leak 2: Stack Over-read
 
@@ -360,8 +372,7 @@ cl /Fe:taskmanager_stack_overread.exe taskmanager_stack_overread.cpp /Od /Zi /RT
 
 <br>
 
-
-
+----------------------------------------------------------
 
 ### Leak 3: Heap override
 
@@ -439,7 +450,7 @@ cl /Fe:taskmanager_heap_overread.exe taskmanager_heap_overread.cpp /Od /Zi /RTC1
 <br>
 
 
-
+----------------------------------------------------------
 
 ## Putting it into practice: NativeBypassCredGuard example
 
@@ -509,6 +520,8 @@ Finally, analyze it with PE-Bear to find *GetProcAddress*, *GetModuleHandle* and
 <br>
 
 
+----------------------------------------------------------
+
 ## Conclusion
 
 In summary, dynamically resolving NTAPI functions without suspicious functions appearing in the Import Address Table remains a tricky problem due to the chicken-and-egg issue of needing *NtReadVirtualMemory* upfront. 
@@ -522,3 +535,4 @@ Incorporating this strategy into tools, in this case NativeBypassCredGuard, show
 So... is this useful? I am not sure, but it was fun to write about it :)
 
 
+<br>
